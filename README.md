@@ -99,18 +99,12 @@ In alternativa imposta `CHROME_PATH` al percorso di un Chrome già installato. `
 
 ## GitHub Pages
 
-Il progetto include `gh-pages`, `base: './'`, `predeploy` e `deploy`. Per pubblicare, crea un repository GitHub e configura il remote `origin` di questo checkout:
+La pubblicazione è gestita da [`.github/workflows/pages.yml`](.github/workflows/pages.yml). Nel repository GitHub, apri **Settings → Pages** e imposta **Source → GitHub Actions**. Poi pubblica il workflow con un push su `main`; ogni push successivo esegue nuovamente build e pubblicazione. Puoi avviarlo anche da **Actions → Build and deploy to GitHub Pages → Run workflow**, selezionando `main`.
 
-```sh
-git init
-git add .
-git commit -m "Build Wordwell"
-git branch -M main
-git remote add origin https://github.com/USERNAME/REPOSITORY.git
-git push -u origin main
-npm run deploy
-```
+Il job `build` usa la versione Node indicata in `.node-version`, installa le dipendenze con `npm ci`, esegue `npm test` e compila con `npm run build`. Carica poi l'intera cartella `dist` come artifact `github-pages`, contenente HTML, JavaScript e CSS pronti per essere serviti. Il job `deploy` parte solo dopo il successo della build e pubblica quell'artifact tramite l'ambiente `github-pages`, con i permessi `pages: write` e `id-token: write`. Non serve un token personale: viene usato il token automatico di GitHub Actions. Le pubblicazioni vengono serializzate senza interrompere quella in corso.
 
-In **Settings → Pages**, scegli **Deploy from a branch**, il branch **gh-pages**, cartella **/(root)**. L'indirizzo sarà `https://USERNAME.github.io/REPOSITORY/`. Il comando `npm run deploy` esegue automaticamente la build e pubblica `dist`. Serve l'autenticazione Git per il repository. Il deploy effettivo non è stato eseguito.
+Il workflow non esegue `npm run deploy` e non richiede un branch `gh-pages`. `base: './'` mantiene i percorsi degli asset compatibili con il sottopercorso del repository. Per il remote attuale, l'indirizzo previsto è `https://paoven.github.io/wordwell/`; il workflow mostra l'URL effettivo nell'ambiente di deployment. La pubblicazione remota deve ancora essere verificata dopo il push e l'attivazione di Pages.
+
+Riferimento: [workflow personalizzati per GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 Tailwind usa il [plugin ufficiale per Vite](https://tailwindcss.com/docs/installation/using-vite). Le soluzioni sono incluse nel bundle client: è un gioco didattico locale, senza server o account.
