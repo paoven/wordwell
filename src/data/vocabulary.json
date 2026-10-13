@@ -1,0 +1,22 @@
+[
+  { "word": "recipe", "definition": "A set of instructions that tells you how to prepare and cook a dish.", "category": "Food", "difficulty": "B1" },
+  { "word": "flavour", "definition": "The particular taste of a food or drink.", "category": "Food", "difficulty": "B1" },
+  { "word": "portion", "definition": "An amount of food served to one person.", "category": "Food", "difficulty": "B1" },
+  { "word": "bitter", "definition": "Having a strong, sharp taste like unsweetened coffee.", "category": "Food", "difficulty": "B2" },
+  { "word": "frozen", "definition": "Kept at a very low temperature so that it becomes hard and can be stored.", "category": "Food", "difficulty": "B1" },
+  { "word": "journey", "definition": "The act of travelling from one place to another.", "category": "Travel", "difficulty": "B1" },
+  { "word": "luggage", "definition": "The bags and suitcases you take with you when you travel.", "category": "Travel", "difficulty": "B1" },
+  { "word": "abroad", "definition": "In or to a country other than your own.", "category": "Travel", "difficulty": "B1" },
+  { "word": "arrival", "definition": "The act of reaching the place you were travelling to.", "category": "Travel", "difficulty": "B1" },
+  { "word": "explore", "definition": "To travel around a place to discover what it is like.", "category": "Travel", "difficulty": "B1" },
+  { "word": "budget", "definition": "A plan for how much money you can spend and what you will spend it on.", "category": "Business", "difficulty": "B2" },
+  { "word": "profit", "definition": "The money a business earns after paying its costs.", "category": "Business", "difficulty": "B1" },
+  { "word": "salary", "definition": "A fixed amount of money you receive regularly for doing your job.", "category": "Business", "difficulty": "B1" },
+  { "word": "meeting", "definition": "An occasion when people come together to discuss something.", "category": "Business", "difficulty": "B1" },
+  { "word": "invoice", "definition": "A document listing goods or services and the amount to be paid for them.", "category": "Business", "difficulty": "B2" },
+  { "word": "screen", "definition": "The flat surface on a computer or phone where images and information appear.", "category": "Technology", "difficulty": "B1" },
+  { "word": "upload", "definition": "To send a file from your device to a system on the internet.", "category": "Technology", "difficulty": "B1" },
+  { "word": "device", "definition": "A piece of equipment made for a particular purpose, such as a phone.", "category": "Technology", "difficulty": "B1" },
+  { "word": "network", "definition": "A group of connected computers that can share information.", "category": "Technology", "difficulty": "B1" },
+  { "word": "privacy", "definition": "The ability to keep your personal information and activities from other people.", "category": "Technology", "difficulty": "B2" }
+]

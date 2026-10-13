@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.github
+.agents
+.codex
+.aws
+.openai
+.env
+.env.*
+!.env.example
+.npmrc
+.DS_Store
+npm-debug.log*
+coverage
+playwright-report
+test-results
