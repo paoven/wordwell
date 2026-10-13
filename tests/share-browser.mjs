@@ -11,11 +11,30 @@ const target = dailyWord(vocabulary, date).word;
 const url = process.env.TEST_URL || 'http://127.0.0.1:5173/';
 const errors = [];
 
-async function open({ guesses, clipboard } = {}) {
+async function open({ guesses, clipboard, nativeShare } = {}) {
   const context = await browser.newContext({
     timezoneId: 'Europe/Rome', viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true,
     permissions: ['clipboard-read', 'clipboard-write'],
   });
+  await context.addInitScript(kind => {
+    Math.random = () => 0;
+    window.nativeShareCalls = [];
+    window.clipboardWrites = [];
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: kind ? data => {
+        window.nativeShareCalls.push({ data, active: navigator.userActivation.isActive });
+        if (kind === 'success') return Promise.resolve();
+        if (kind === 'pending') return new Promise(resolve => { window.finishShare = resolve; });
+        if (kind === 'throw') throw new DOMException('Blocked', 'NotAllowedError');
+        return Promise.reject(new DOMException('Unavailable', kind === 'abort' ? 'AbortError' : 'NotAllowedError'));
+      } : undefined,
+    });
+    if (kind) Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: text => { window.clipboardWrites.push(text); return Promise.resolve(); } },
+    });
+  }, nativeShare);
   if (guesses) await context.addInitScript(({ key, target, guesses }) => {
     localStorage.setItem(key, JSON.stringify({ word: target, guesses, input: '' }));
   }, { key: storageKey(date), target, guesses });
@@ -86,6 +105,55 @@ try {
     }
     await blocked.context.close();
   }
+  for (const guesses of [[target], loss]) {
+    const native = await open({ guesses, nativeShare: 'success' });
+    await native.page.getByRole('button', { name: 'Condividi Risultato' }).click();
+    assert.deepEqual(await native.page.evaluate(() => window.nativeShareCalls), [
+      { data: { text: buildShareText(guesses, target, date) }, active: true },
+    ]);
+    assert.deepEqual(await native.page.evaluate(() => window.clipboardWrites), []);
+    assert.equal(await native.page.getByText('Copiato negli appunti!', { exact: true }).count(), 0);
+    assert.equal(await native.page.getByRole('textbox').count(), 0);
+    await native.context.close();
+  }
+  const cancelled = await open({ guesses: loss, nativeShare: 'abort' });
+  const cancelledButton = cancelled.page.getByRole('button', { name: 'Condividi Risultato' });
+  await cancelledButton.click();
+  assert.deepEqual(await cancelled.page.evaluate(() => window.clipboardWrites), []);
+  assert.equal(await cancelled.page.getByRole('textbox').count(), 0);
+  assert.equal(await cancelledButton.isEnabled(), true);
+  await cancelledButton.click();
+  assert.equal(await cancelled.page.evaluate(() => window.nativeShareCalls.length), 2);
+  await cancelled.context.close();
+
+  for (const nativeShare of ['denied', 'throw']) {
+    const failed = await open({ guesses: loss, nativeShare });
+    await failed.page.getByRole('button', { name: 'Condividi Risultato' }).click();
+    assert.deepEqual(await failed.page.evaluate(() => window.clipboardWrites), [buildShareText(loss, target, date)]);
+    assert.equal(await failed.page.getByText('Copiato negli appunti!', { exact: true }).count(), 1);
+    await failed.context.close();
+  }
+  const blockedShare = await open({ guesses: loss, nativeShare: 'denied', clipboard: 'missing' });
+  await blockedShare.page.getByRole('button', { name: 'Condividi Risultato' }).click();
+  assert.equal(await blockedShare.page.getByRole('textbox').inputValue(), buildShareText(loss, target, date));
+  await blockedShare.context.close();
+
+  const insecureShare = await open({ guesses: loss, nativeShare: 'success', clipboard: 'insecure' });
+  await insecureShare.page.getByRole('button', { name: 'Condividi Risultato' }).click();
+  assert.deepEqual(await insecureShare.page.evaluate(() => window.nativeShareCalls), []);
+  assert.equal(await insecureShare.page.getByRole('textbox').inputValue(), buildShareText(loss, target, date));
+  await insecureShare.context.close();
+
+  const pendingShare = await open({ guesses: loss, nativeShare: 'pending' });
+  const pendingButton = pendingShare.page.getByRole('button', { name: 'Condividi Risultato' });
+  await pendingButton.click();
+  assert.equal(await pendingButton.isDisabled(), true);
+  await pendingButton.evaluate(node => node.click());
+  assert.equal(await pendingShare.page.evaluate(() => window.nativeShareCalls.length), 1);
+  await pendingShare.page.evaluate(() => window.finishShare());
+  await pendingButton.waitFor();
+  assert.equal(await pendingButton.isEnabled(), true);
+  await pendingShare.context.close();
   assert.deepEqual(errors, []);
-  console.log('PASS: real clipboard for daily win/loss, exact text and rendered emojis, temporary feedback, reload, no sharing in free mode, denied/missing/insecure clipboard fallbacks, retry and manual selection; no console errors.');
+  console.log('PASS: native share payload and click activation, cancellation, concurrent clicks, clipboard/manual fallbacks, real clipboard for daily win/loss, exact text and emojis, feedback, reload, no sharing in free mode; no console errors.');
 } finally { await browser.close(); }

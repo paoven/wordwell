@@ -99,11 +99,13 @@ In alternativa imposta `CHROME_PATH` al percorso di un Chrome già installato. `
 
 ## Condivisione dei risultati
 
-Al termine della Parola del Giorno, sia in caso di vittoria che di sconfitta, **Share Result** copia data, numero di tentativi, griglia emoji e link `https://paoven.github.io/wordwell/`. Il testo non include lettere, definizione o soluzione. La conferma “Copiato negli appunti!” scompare dopo tre secondi.
+Al termine della Parola del Giorno, sia in caso di vittoria che di sconfitta, **Share Result** apre il menu di condivisione del dispositivo quando disponibile: su mobile puoi scegliere WhatsApp, Telegram o altre app proposte dal telefono. La [Web Share API](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share) viene invocata direttamente dal click, in un contesto sicuro. Le destinazioni disponibili dipendono dal browser, dal sistema e dalle app installate. Se annulli il menu, non viene eseguita nessun'altra azione.
+
+Il risultato contiene data, numero di tentativi, griglia emoji e link `https://paoven.github.io/wordwell/`, senza lettere, definizione o soluzione. Se la condivisione nativa è assente o fallisce, il pulsante prova a copiare il risultato. La conferma “Copiato negli appunti!” scompare dopo tre secondi.
 
 La copia usa `navigator.clipboard.writeText` direttamente dal click, senza leggere gli appunti o richiedere permessi in anticipo. La [Clipboard API richiede un contesto sicuro](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText): HTTPS sul sito pubblicato oppure localhost in sviluppo. Se un browser integrato o una policy blocca la copia, l'app mostra il testo selezionabile per la copia manuale e suggerisce di aprire la pagina nel browser del telefono. Non è possibile forzare i permessi di WhatsApp o Telegram dal sito.
 
-Il test opzionale `node tests/share-browser.mjs`, con le stesse opzioni Playwright degli altri test browser, verifica copia reale, vittoria/sconfitta, corrispondenza con la griglia visualizzata, feedback temporaneo, ripristino e casi di API assente, permesso negato o contesto non sicuro. I browser integrati reali non vengono emulati: sono verificati i relativi casi di blocco dell'API.
+Il test opzionale `node tests/share-browser.mjs`, con le stesse opzioni Playwright degli altri test browser, verifica copia reale, vittoria/sconfitta, corrispondenza con la griglia visualizzata, feedback temporaneo, ripristino e casi di API assente, permesso negato o contesto non sicuro. Per la condivisione nativa simula successo, annullamento, errore e operazione in corso, verificando il testo passato e l'attivazione da click. Il menu di sistema e l'invio effettivo a WhatsApp richiedono una verifica su un telefono reale.
 
 ## GitHub Pages
 

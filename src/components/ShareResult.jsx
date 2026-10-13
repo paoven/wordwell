@@ -4,7 +4,7 @@ import { buildShareText } from '../lib/share.js';
 export default function ShareResult({ guesses, target, date }) {
   const text = buildShareText(guesses, target, date);
   const [copied, setCopied] = useState(false);
-  const [copying, setCopying] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [manual, setManual] = useState(false);
   const textarea = useRef(null);
   const timer = useRef(null);
@@ -16,13 +16,26 @@ export default function ShareResult({ guesses, target, date }) {
     return () => { alive.current = false; clearTimeout(timer.current); };
   }, []);
 
-  async function copyResult() {
+  async function shareResult() {
     if (pending.current) return;
     pending.current = true;
-    setCopying(true);
+    setSharing(true);
     setCopied(false);
     clearTimeout(timer.current);
     try {
+      // Call from the click so the phone can open its native app chooser.
+      if (window.isSecureContext && typeof navigator.share === 'function') {
+        try {
+          // The text already contains the link; avoid duplicating it in a URL field.
+          await navigator.share({ text });
+          if (alive.current) setManual(false);
+          return;
+        } catch (error) {
+          // Dismissing the chooser must not copy or open another share flow.
+          if (error?.name === 'AbortError') return;
+          if (!alive.current) return;
+        }
+      }
       // Invoke directly from the user's click: Safari/WebViews may require activation.
       // Do not read clipboard contents or preflight browser-specific permissions.
       if (!window.isSecureContext || !navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
@@ -36,7 +49,7 @@ export default function ShareResult({ guesses, target, date }) {
       if (alive.current) setManual(true);
     } finally {
       pending.current = false;
-      if (alive.current) setCopying(false);
+      if (alive.current) setSharing(false);
     }
   }
 
@@ -47,8 +60,8 @@ export default function ShareResult({ guesses, target, date }) {
   }
 
   return <div className="share-result text-center mb-4">
-    <button className="new-word" aria-label="Condividi Risultato" disabled={copying} onClick={copyResult}>
-      <span lang="en">{copying ? 'Copying…' : 'Share Result'}</span>
+    <button className="new-word" aria-label="Condividi Risultato" disabled={sharing} onClick={shareResult}>
+      <span lang="en">{sharing ? 'Sharing…' : 'Share Result'}</span>
     </button>
     <p className="text-xs text-emerald-800 mt-2 min-h-4" role="status" aria-live="polite">{copied ? 'Copiato negli appunti!' : ''}</p>
     {manual && <div className="mt-3 rounded-xl border border-stone-200 bg-white p-4 text-left">
