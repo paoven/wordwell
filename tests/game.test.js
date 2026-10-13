@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { dailyWord, dateHash, gameStatus, keyboardColors, localDate, randomWord, readDaily, scoreGuess, storageKey } from '../src/lib/game.js';
+import { dailyWord, dateHash, gameStatus, isValidGuess, keyboardColors, localDate, randomWord, readDaily, scoreGuess, storageKey } from '../src/lib/game.js';
 const words = JSON.parse(readFileSync(new URL('../src/data/vocabulary.json', import.meta.url)));
+const allowedWords = new Set(words.map(item => item.word));
 
 test('dictionary contains thousands of unique modern words with valid clues and CEFR levels', () => {
   const exclusions = JSON.parse(readFileSync(new URL('../src/data/vocabulary-exclusions.json', import.meta.url)));
@@ -57,13 +58,23 @@ test('free word stays in category and avoids immediate repetitions', () => {
 });
 test('daily persistence restores guesses and partial input, isolating dates', () => {
   const data = new Map(); const storage = { getItem: key => data.get(key) || null };
-  data.set(storageKey('2026-10-13'), JSON.stringify({ word: 'recipe', guesses: ['aaaaaa'], input: 'rec' }));
-  assert.deepEqual(readDaily(storage, '2026-10-13', 'recipe'), { guesses: ['aaaaaa'], input: 'rec' });
-  assert.deepEqual(readDaily(storage, '2026-10-14', 'recipe'), { guesses: [], input: '' });
+  data.set(storageKey('2026-10-13'), JSON.stringify({ word: 'recipe', guesses: ['screen'], input: 'rec' }));
+  assert.deepEqual(readDaily(storage, '2026-10-13', 'recipe', allowedWords), { guesses: ['screen'], input: 'rec' });
+  assert.deepEqual(readDaily(storage, '2026-10-14', 'recipe', allowedWords), { guesses: [], input: '' });
 });
 test('corrupt, mismatched or unavailable storage fails safely', () => {
-  for (const value of ['broken', 'null', '{"word":"recipe","guesses":[42]}', '{"word":"recipe","guesses":["recipe","aaaaaa"]}', '{"word":"other","guesses":[]}']) {
-    assert.deepEqual(readDaily({ getItem: () => value }, '2026-10-13', 'recipe'), { guesses: [], input: '' });
+  for (const value of ['broken', 'null', '{"word":"recipe","guesses":[42]}', '{"word":"recipe","guesses":["recipe","aaaaaa"]}', '{"word":"other","guesses":[]}', '{"word":"recipe","guesses":["zzzzzz"]}']) {
+    assert.deepEqual(readDaily({ getItem: () => value }, '2026-10-13', 'recipe', allowedWords), { guesses: [], input: '' });
   }
-  assert.deepEqual(readDaily({ getItem: () => { throw Error('blocked'); } }, '2026-10-13', 'recipe'), { guesses: [], input: '' });
+  assert.deepEqual(readDaily({ getItem: () => { throw Error('blocked'); } }, '2026-10-13', 'recipe', allowedWords), { guesses: [], input: '' });
+});
+
+test('guesses must be dictionary words of the target length, across categories', () => {
+  assert.equal(isValidGuess('recipe', 'recipe', allowedWords), true);
+  assert.equal(isValidGuess('screen', 'recipe', allowedWords), true);
+  assert.equal(isValidGuess('profit', 'recipe', allowedWords), true);
+  for (const guess of ['zzzzzz', 'qwerty', 'abacus', 'aardvark', 'cat', 'RECIPE', '', null, 123456]) {
+    assert.equal(isValidGuess(guess, 'recipe', allowedWords), false, String(guess));
+  }
+  for (const { word } of words) assert.equal(isValidGuess(word, word, allowedWords), true, word);
 });

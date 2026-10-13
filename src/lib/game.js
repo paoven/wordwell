@@ -37,13 +37,16 @@ export function keyboardColors(guesses, target) {
 export function gameStatus(guesses, word) {
   return guesses.includes(word) ? 'won' : guesses.length >= MAX_GUESSES ? 'lost' : 'playing';
 }
+export function isValidGuess(guess, target, allowedWords) {
+  return typeof guess === 'string' && guess.length === target.length && allowedWords.has(guess);
+}
 export function storageKey(date) { return `wordwell:daily:v1:${date}`; }
-export function readDaily(storage, date, word) {
+export function readDaily(storage, date, word, allowedWords) {
   const fresh = { guesses: [], input: '' };
   try {
     const saved = JSON.parse(storage.getItem(storageKey(date)));
     if (!saved || saved.word !== word || !Array.isArray(saved.guesses) || saved.guesses.length > MAX_GUESSES) return fresh;
-    if (!saved.guesses.every(guess => typeof guess === 'string' && new RegExp(`^[a-z]{${word.length}}$`).test(guess))) return fresh;
+    if (!saved.guesses.every(guess => isValidGuess(guess, word, allowedWords))) return fresh;
     const winningIndex = saved.guesses.indexOf(word);
     if (winningIndex >= 0 && winningIndex !== saved.guesses.length - 1) return fresh;
     const input = typeof saved.input === 'string' && /^[a-z]*$/.test(saved.input) && saved.input.length <= word.length ? saved.input : '';

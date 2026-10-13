@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import vocabulary from './data/vocabulary.json';
 import ShareResult from './components/ShareResult.jsx';
-import { dailyWord, gameStatus, keyboardColors, localDate, MAX_GUESSES, randomWord, readDaily, scoreGuess, storageKey } from './lib/game.js';
+import { dailyWord, gameStatus, isValidGuess, keyboardColors, localDate, MAX_GUESSES, randomWord, readDaily, scoreGuess, storageKey } from './lib/game.js';
 
 const categories = [...new Set(vocabulary.map(item => item.category))];
+const allowedWords = new Set(vocabulary.map(item => item.word));
 const stateNames = { correct: 'posizione corretta', present: 'presente in altra posizione', absent: 'assente' };
 const blank = () => ({ guesses: [], input: '' });
 function load(date) {
-  try { return readDaily(window.localStorage, date, dailyWord(vocabulary, date).word); }
+  try { return readDaily(window.localStorage, date, dailyWord(vocabulary, date).word, allowedWords); }
   catch { return blank(); }
 }
 
@@ -61,8 +62,9 @@ export default function App() {
     const update = mode === 'daily' ? setDaily : setFree;
     if (key === 'ENTER') {
       if (game.input.length !== word.word.length) { setMessage(`Inserisci ${word.word.length} lettere prima di inviare.`); return; }
+      if (!isValidGuess(game.input, word.word, allowedWords)) { setMessage('Questa parola non è nel vocabolario del gioco. Prova un’altra parola.'); return; }
       update(current => {
-        if (gameStatus(current.guesses, word.word) !== 'playing' || current.input.length !== word.word.length) return current;
+        if (gameStatus(current.guesses, word.word) !== 'playing' || !isValidGuess(current.input, word.word, allowedWords)) return current;
         return { guesses: [...current.guesses, current.input], input: '' };
       });
       setMessage('');
@@ -155,7 +157,7 @@ export default function App() {
       <div className="lg:hidden legend-mobile flex flex-wrap justify-center gap-x-4 gap-y-2 mt-5 mb-4 text-xs"><span><i className="swatch correct" />Corretta</span><span><i className="swatch present" />Altra posizione</span><span><i className="swatch absent" />Assente</span></div>
     </main>
     <footer className="max-w-6xl w-full mx-auto px-5 sm:px-8 py-6 mt-5 flex flex-wrap justify-between gap-3 border-t border-stone-200/70 text-xs text-stone-400"><span>Un piccolo rituale, un grande vocabolario.</span><a href="./vocabulary-sources.html">Fonti del vocabolario</a></footer>
-    <dialog ref={helpRef} onCancel={() => setHelp(false)} onClose={() => setHelp(false)} className="help-dialog"><div className="flex justify-between items-center"><h2 className="text-3xl">Come si gioca</h2><button className="help-button" onClick={() => setHelp(false)} aria-label="Chiudi">×</button></div><p className="my-5 text-sm leading-relaxed">Leggi la definizione in inglese e trova la parola in sei tentativi. Ogni tentativo deve avere il numero di lettere indicato. Puoi provare qualsiasi combinazione di lettere A–Z.</p><Legend /><p className="my-5 text-sm leading-relaxed">Usa la tastiera o i tasti sullo schermo. ENTER invia il tentativo e BACKSPACE cancella una lettera. Le lettere ripetute sono colorate in base al numero di volte in cui compaiono nella soluzione.</p><p className="text-sm leading-relaxed">La sfida giornaliera si salva su questo browser e cambia a mezzanotte locale. In modalità libera scegli una categoria e gioca tutte le volte che vuoi.</p><button className="new-word w-full mt-6" onClick={() => setHelp(false)}>Ho capito, giochiamo!</button></dialog>
+    <dialog ref={helpRef} onCancel={() => setHelp(false)} onClose={() => setHelp(false)} className="help-dialog"><div className="flex justify-between items-center"><h2 className="text-3xl">Come si gioca</h2><button className="help-button" onClick={() => setHelp(false)} aria-label="Chiudi">×</button></div><p className="my-5 text-sm leading-relaxed">Leggi la definizione in inglese e trova la parola in sei tentativi. Ogni tentativo deve avere il numero di lettere indicato. Ogni tentativo deve essere una parola presente nel vocabolario del gioco, anche di una categoria diversa. Le parole non riconosciute non consumano tentativi.</p><Legend /><p className="my-5 text-sm leading-relaxed">Usa la tastiera o i tasti sullo schermo. ENTER invia il tentativo e BACKSPACE cancella una lettera. Le lettere ripetute sono colorate in base al numero di volte in cui compaiono nella soluzione.</p><p className="text-sm leading-relaxed">La sfida giornaliera si salva su questo browser e cambia a mezzanotte locale. In modalità libera scegli una categoria e gioca tutte le volte che vuoi.</p><button className="new-word w-full mt-6" onClick={() => setHelp(false)}>Ho capito, giochiamo!</button></dialog>
   </div>;
 }
 

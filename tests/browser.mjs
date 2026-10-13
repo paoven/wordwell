@@ -36,7 +36,14 @@ try {
   await type('x'); await page.keyboard.press('Enter');
   assert.match(await page.getByRole('status').first().textContent(), /Inserisci/);
   await page.keyboard.press('Backspace');
-  const guess = 'e'.repeat(target.length);
+  const invalid = 'z'.repeat(target.length);
+  await type(invalid); await page.keyboard.press('Enter');
+  assert.match(await page.getByRole('status').first().textContent(), /non è nel vocabolario/);
+  assert.equal(await page.locator('.tile.correct,.tile.present,.tile.absent').count(), 0);
+  await page.reload();
+  assert.equal(await page.locator('.board-row').first().innerText().then(value => value.replace(/\s/g, '').toLowerCase()), invalid);
+  for (let i = 0; i < target.length; i++) await page.keyboard.press('Backspace');
+  const guess = words.find(item => item.word.length === target.length && item.word !== target).word;
   await type(guess); await page.keyboard.press('Enter'); await checkColors(guess, target);
   await type('ab'); await page.reload();
   assert.equal(await page.locator('.board-row').nth(1).innerText().then(value => value.replace(/\s/g, '').toLowerCase()), 'ab');
@@ -53,6 +60,18 @@ try {
   for (const category of ['Food', 'Travel', 'Business', 'Technology']) {
     await page.locator('#category').selectOption(category);
     const selected = await currentFreeWord(); assert.equal(selected.category, category);
+    if (category === 'Food') {
+      // The virtual keyboard applies the same rule, with no attempt consumed.
+      for (let i = 0; i < selected.word.length; i++) await page.getByRole('button', { name: 'Z', exact: true }).click();
+      await page.getByRole('button', { name: 'ENTER', exact: true }).click();
+      assert.match(await page.getByRole('status').first().textContent(), /non è nel vocabolario/);
+      assert.equal(await page.locator('.tile.correct,.tile.present,.tile.absent').count(), 0);
+      for (let i = 0; i < selected.word.length; i++) await page.getByRole('button', { name: 'Backspace, cancella ultima lettera' }).click();
+      const otherCategory = words.find(item => item.category !== category && item.word.length === selected.word.length).word;
+      for (const letter of otherCategory) await page.locator('.key').filter({ hasText: new RegExp(`^${letter}$`, 'i') }).click();
+      await page.getByRole('button', { name: 'ENTER', exact: true }).click();
+      await checkColors(otherCategory, selected.word);
+    }
     await type(selected.word); await page.keyboard.press('Enter');
     assert.match(await page.getByRole('status').first().textContent(), /Ben fatto/);
     await page.getByRole('button', { name: 'Gioca ancora' }).click();
@@ -60,7 +79,8 @@ try {
     assert.equal(await page.locator('.tile.correct').count(), 0);
   }
   const losingWord = (await currentFreeWord()).word;
-  for (let i = 0; i < 6; i++) { await type('z'.repeat(losingWord.length)); await page.keyboard.press('Enter'); }
+  const wrongWord = words.find(item => item.word.length === losingWord.length && item.word !== losingWord).word;
+  for (let i = 0; i < 6; i++) { await type(wrongWord); await page.keyboard.press('Enter'); }
   assert.match(await page.getByRole('status').first().textContent(), new RegExp(`La parola era ${losingWord.toUpperCase()}`));
   assert.equal(await page.locator('.key:disabled').count(), 28);
   await page.getByRole('button', { name: 'Gioca ancora' }).click();
@@ -98,6 +118,16 @@ try {
   assert.match(await blockedPage.getByRole('status').last().textContent(), /non consente il salvataggio/);
   await blockedPage.locator('h1').click(); await blockedPage.keyboard.type('a');
   assert.equal(await blockedPage.locator('.tile.filled').count(), 1);
+  // Previously saved random-letter guesses cannot bypass dictionary validation.
+  const legacy = await context.newPage();
+  legacy.on('pageerror', error => errors.push(error.message));
+  await legacy.addInitScript(({ date, target }) => {
+    localStorage.setItem(`wordwell:daily:v1:${date}`, JSON.stringify({ word: target, guesses: ['z'.repeat(target.length)], input: '' }));
+  }, { date, target });
+  await legacy.goto(url);
+  assert.equal(await legacy.locator('.tile.correct,.tile.present,.tile.absent').count(), 0);
+  await legacy.locator('h1').click(); await legacy.keyboard.type(target); await legacy.keyboard.press('Enter');
+  assert.match(await legacy.getByRole('status').first().textContent(), /Ben fatto/);
   // Force the longest word to verify the grid and keyboard at narrow widths.
   const longest = [...words].sort((a, b) => b.word.length - a.word.length)[0];
   const pool = words.filter(word => word.category === longest.category);

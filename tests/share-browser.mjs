@@ -8,6 +8,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH 
 const vocabulary = JSON.parse(readFileSync(new URL('../src/data/vocabulary.json', import.meta.url)));
 const date = '2026-10-14';
 const target = dailyWord(vocabulary, date).word;
+const wrongWord = vocabulary.find(item => item.word.length === target.length && item.word !== target).word;
 const url = process.env.TEST_URL || 'http://127.0.0.1:5173/';
 const errors = [];
 
@@ -59,7 +60,7 @@ try {
   const { page, context } = await open();
   const share = page.getByRole('button', { name: 'Condividi Risultato' });
   assert.equal(await share.count(), 0, 'No share button during play');
-  const guesses = ['e'.repeat(target.length), target];
+  const guesses = [wrongWord, target];
   await page.locator('h1').click();
   for (const guess of guesses) { await page.keyboard.type(guess); await page.keyboard.press('Enter'); }
   await share.click();
@@ -81,7 +82,7 @@ try {
   assert.equal(await share.count(), 1);
   await context.close();
 
-  const loss = Array(6).fill('z'.repeat(target.length));
+  const loss = Array(6).fill(wrongWord);
   const lost = await open({ guesses: loss });
   await lost.page.getByRole('button', { name: 'Condividi Risultato' }).click();
   assert.equal(await lost.page.evaluate(() => navigator.clipboard.readText()), buildShareText(loss, target, date));
