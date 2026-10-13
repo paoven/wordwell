@@ -97,6 +97,14 @@ In alternativa imposta `CHROME_PATH` al percorso di un Chrome già installato. `
 
 “Stessa parola per tutti” vale per chi ha la stessa **data locale**. Fusi orari diversi possono avere date e quindi parole diverse nello stesso istante. Un elenco finito di parole può ripetere soluzioni in giornate diverse; mantenere ordine e contenuto del dizionario identici garantisce la selezione condivisa.
 
+## Condivisione dei risultati
+
+Al termine della Parola del Giorno, sia in caso di vittoria che di sconfitta, **Share Result** copia data, numero di tentativi, griglia emoji e link `https://paoven.github.io/wordwell/`. Il testo non include lettere, definizione o soluzione. La conferma “Copiato negli appunti!” scompare dopo tre secondi.
+
+La copia usa `navigator.clipboard.writeText` direttamente dal click, senza leggere gli appunti o richiedere permessi in anticipo. La [Clipboard API richiede un contesto sicuro](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText): HTTPS sul sito pubblicato oppure localhost in sviluppo. Se un browser integrato o una policy blocca la copia, l'app mostra il testo selezionabile per la copia manuale e suggerisce di aprire la pagina nel browser del telefono. Non è possibile forzare i permessi di WhatsApp o Telegram dal sito.
+
+Il test opzionale `node tests/share-browser.mjs`, con le stesse opzioni Playwright degli altri test browser, verifica copia reale, vittoria/sconfitta, corrispondenza con la griglia visualizzata, feedback temporaneo, ripristino e casi di API assente, permesso negato o contesto non sicuro. I browser integrati reali non vengono emulati: sono verificati i relativi casi di blocco dell'API.
+
 ## GitHub Pages
 
 La pubblicazione è gestita da [`.github/workflows/pages.yml`](.github/workflows/pages.yml). Nel repository GitHub, apri **Settings → Pages** e imposta **Source → GitHub Actions**. Poi pubblica il workflow con un push su `main`; ogni push successivo esegue nuovamente build e pubblicazione. Puoi avviarlo anche da **Actions → Build and deploy to GitHub Pages → Run workflow**, selezionando `main`.

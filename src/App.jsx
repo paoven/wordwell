@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import vocabulary from './data/vocabulary.json';
+import ShareResult from './components/ShareResult.jsx';
 import { dailyWord, gameStatus, keyboardColors, localDate, MAX_GUESSES, randomWord, readDaily, scoreGuess, storageKey } from './lib/game.js';
 
 const categories = [...new Set(vocabulary.map(item => item.category))];
@@ -139,6 +140,7 @@ export default function App() {
             {status === 'won' ? <><strong>Ben fatto! La parola è {word.word.toUpperCase()}.</strong><span>Hai trovato la soluzione in {game.guesses.length} {game.guesses.length === 1 ? 'tentativo' : 'tentativi'}.</span></> : status === 'lost' ? <><strong>La parola era {word.word.toUpperCase()}.</strong><span>Ogni parola è un piccolo passo avanti.</span></> : message || <span className="text-stone-400">Segui l’indizio e scrivi il tuo primo tentativo.</span>}
             {status !== 'playing' && mode === 'free' && <button className="new-word mt-3" onClick={() => newWord()}>Gioca ancora ↗</button>}
           </div>
+          {mode === 'daily' && status !== 'playing' && <ShareResult key={date} guesses={daily.guesses} target={word.word} date={date} />}
           <div className="keyboard" aria-label="Tastiera virtuale">
             {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row, index) => <div className="keyboard-row" key={row}>
               {index === 2 && <button className="key key-wide" disabled={status !== 'playing'} onClick={event => { onKey('ENTER'); event.currentTarget.blur(); }}>ENTER</button>}
