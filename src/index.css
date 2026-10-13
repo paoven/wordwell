@@ -28,9 +28,11 @@ h1 { line-height: 1.13; font-weight: 400; }
 select { width: 100%; padding: 9px; border: 1px solid #ccd6c4; background: #f7f8f2; border-radius: 6px; font-size: 13px; }
 .new-word { background: #2b6652; color: #fff; border-radius: 7px; padding: 10px 16px; font-size: 12px; }
 .new-word:hover { background: #225340; }
-.board { width: min(100%, 380px); margin: 0 auto; display: grid; gap: 7px; }
+.board { width: min(100%, 380px); margin: 0 auto; display: grid; gap: 7px; container-type: inline-size; }
 .board-row { display: grid; grid-template-columns: repeat(var(--letters), minmax(0, 1fr)); gap: 7px; }
 .tile { aspect-ratio: 1; border: 1.5px solid #dbe0d5; border-radius: 5px; display: grid; place-items: center; font-weight: 700; font-size: clamp(19px, 4vw, 27px); background: #fcfdf9; text-transform: uppercase; }
+.board.long-word .board-row { gap: 3px; }
+.board.long-word .tile { min-width: 0; border-radius: 3px; font-size: clamp(8px, calc((100cqw - (var(--letters) - 1) * 3px) / var(--letters) * .6), 27px); }
 .tile.filled { border-color: #829884; animation: pop .12s ease-out; }
 .correct { background: #558262; color: white; border-color: #558262; }
 .present { background: #b28e35; color: white; border-color: #b28e35; }

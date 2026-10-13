@@ -4,14 +4,21 @@ import { readFileSync } from 'node:fs';
 import { dailyWord, dateHash, gameStatus, keyboardColors, localDate, randomWord, readDaily, scoreGuess, storageKey } from '../src/lib/game.js';
 const words = JSON.parse(readFileSync(new URL('../src/data/vocabulary.json', import.meta.url)));
 
-test('dictionary has at least 15 unique, valid B1/B2 entries across all categories', () => {
-  assert.ok(words.length >= 15);
+test('dictionary contains thousands of unique modern words with valid clues and CEFR levels', () => {
+  const exclusions = JSON.parse(readFileSync(new URL('../src/data/vocabulary-exclusions.json', import.meta.url)));
+  assert.ok(words.length >= 4400 && words.length <= 5000);
   assert.equal(new Set(words.map(item => item.word)).size, words.length);
   for (const item of words) {
-    assert.match(item.word, /^[a-z]+$/); assert.ok(item.definition.length > 20);
-    assert.ok(['B1', 'B2'].includes(item.difficulty));
+    assert.match(item.word, /^[a-z]{2,18}$/); assert.ok(item.definition.length > 20);
+    assert.ok(['A1', 'A2', 'B1', 'B2', 'C1'].includes(item.difficulty));
+    assert.ok(!exclusions.includes(item.word), item.word);
+    assert.doesNotMatch(item.definition, /\b(archaic|obsolete|vulgar|offensive|derogatory|slang)\b/i);
+    assert.doesNotMatch(item.definition, new RegExp(`\\b${item.word}\\b`, 'i'), item.word);
+    assert.doesNotMatch(item.definition, /;\s*;/);
   }
-  assert.deepEqual([...new Set(words.map(item => item.category))], ['Food', 'Travel', 'Business', 'Technology']);
+  for (const category of ['Food', 'Travel', 'Business', 'Technology', 'Everyday Life', 'Health', 'Nature']) {
+    assert.ok(words.filter(word => word.category === category).length >= 20, category);
+  }
 });
 test('date is local, padded and handles year rollover', () => {
   assert.equal(localDate(new Date(2026, 0, 2)), '2026-01-02');
@@ -42,7 +49,7 @@ test('win, sixth-guess win and loss are distinct', () => {
   assert.equal(gameStatus(Array(6).fill('aaaaaa'), 'recipe'), 'lost');
 });
 test('free word stays in category and avoids immediate repetitions', () => {
-  for (const category of ['Food', 'Travel', 'Business', 'Technology']) {
+  for (const category of new Set(words.map(word => word.category))) {
     const first = randomWord(words, category, undefined, () => 0);
     const next = randomWord(words, category, first.word, () => 0);
     assert.equal(next.category, category); assert.notEqual(first.word, next.word);

@@ -126,7 +126,7 @@ export default function App() {
         </aside>
         <section className="game-panel min-w-0" aria-label="Griglia di gioco">
           <div className="flex justify-between items-center max-w-[380px] mx-auto mb-4 px-1"><span className="eyebrow">{mode === 'daily' ? 'LA SFIDA DI OGGI' : 'LA TUA PAUSA DI INGLESE'}</span><span className="text-xs text-stone-500">{game.guesses.length} / 6 tentativi</span></div>
-          <div className="board" style={{ '--letters': word.word.length }} role="group" aria-label={`${word.word.length} lettere, ${MAX_GUESSES} tentativi`}>
+          <div className={`board${word.word.length > 8 ? ' long-word' : ''}`} style={{ '--letters': word.word.length }} role="group" aria-label={`${word.word.length} lettere, ${MAX_GUESSES} tentativi`}>
             {Array.from({ length: MAX_GUESSES }, (_, row) => {
               const guess = game.guesses[row];
               const letters = guess || (row === game.guesses.length ? game.input : '');
@@ -154,7 +154,7 @@ export default function App() {
       </div>
       <div className="lg:hidden legend-mobile flex flex-wrap justify-center gap-x-4 gap-y-2 mt-5 mb-4 text-xs"><span><i className="swatch correct" />Corretta</span><span><i className="swatch present" />Altra posizione</span><span><i className="swatch absent" />Assente</span></div>
     </main>
-    <footer className="max-w-6xl w-full mx-auto px-5 sm:px-8 py-6 mt-5 flex justify-between border-t border-stone-200/70 text-xs text-stone-400"><span>Un piccolo rituale, un grande vocabolario.</span><span className="hidden sm:inline">Made for curious minds.</span></footer>
+    <footer className="max-w-6xl w-full mx-auto px-5 sm:px-8 py-6 mt-5 flex flex-wrap justify-between gap-3 border-t border-stone-200/70 text-xs text-stone-400"><span>Un piccolo rituale, un grande vocabolario.</span><a href="./vocabulary-sources.html">Fonti del vocabolario</a></footer>
     <dialog ref={helpRef} onCancel={() => setHelp(false)} onClose={() => setHelp(false)} className="help-dialog"><div className="flex justify-between items-center"><h2 className="text-3xl">Come si gioca</h2><button className="help-button" onClick={() => setHelp(false)} aria-label="Chiudi">×</button></div><p className="my-5 text-sm leading-relaxed">Leggi la definizione in inglese e trova la parola in sei tentativi. Ogni tentativo deve avere il numero di lettere indicato. Puoi provare qualsiasi combinazione di lettere A–Z.</p><Legend /><p className="my-5 text-sm leading-relaxed">Usa la tastiera o i tasti sullo schermo. ENTER invia il tentativo e BACKSPACE cancella una lettera. Le lettere ripetute sono colorate in base al numero di volte in cui compaiono nella soluzione.</p><p className="text-sm leading-relaxed">La sfida giornaliera si salva su questo browser e cambia a mezzanotte locale. In modalità libera scegli una categoria e gioca tutte le volte che vuoi.</p><button className="new-word w-full mt-6" onClick={() => setHelp(false)}>Ho capito, giochiamo!</button></dialog>
   </div>;
 }

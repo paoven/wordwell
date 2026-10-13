@@ -11,6 +11,7 @@ const errors = [];
 const artifacts = mkdtempSync(join(tmpdir(), 'wordwell-browser-'));
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Rome' });
 const page = await context.newPage();
+await page.addInitScript(() => { Math.random = () => 0; });
 page.on('pageerror', error => errors.push(error.message));
 const url = process.env.TEST_URL || 'http://127.0.0.1:5173/';
 async function checkColors(guess, target) {
@@ -97,6 +98,31 @@ try {
   assert.match(await blockedPage.getByRole('status').last().textContent(), /non consente il salvataggio/);
   await blockedPage.locator('h1').click(); await blockedPage.keyboard.type('a');
   assert.equal(await blockedPage.locator('.tile.filled').count(), 1);
+  // Force the longest word to verify the grid and keyboard at narrow widths.
+  const longest = [...words].sort((a, b) => b.word.length - a.word.length)[0];
+  const pool = words.filter(word => word.category === longest.category);
+  const sample = (pool.findIndex(word => word.word === longest.word) + 0.5) / pool.length;
+  const longPage = await context.newPage();
+  longPage.on('pageerror', error => errors.push(error.message));
+  await longPage.addInitScript(value => { Math.random = () => value; }, sample);
+  await longPage.goto(url);
+  await longPage.getByRole('button', { name: 'Modalità libera' }).click();
+  await longPage.locator('#category').selectOption(longest.category);
+  assert.equal(await longPage.locator('.definition').textContent(), longest.definition);
+  for (const width of [320, 375, 768, 1440]) {
+    await longPage.setViewportSize({ width, height: 900 });
+    await longPage.locator('h1').click();
+    await longPage.keyboard.type(longest.word);
+    assert.ok(await longPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    assert.ok(await longPage.locator('.tile.filled').evaluateAll(nodes => nodes.every(node =>
+      node.querySelector('span').getBoundingClientRect().width <= node.getBoundingClientRect().width)));
+    for (let i = 0; i < longest.word.length; i++) await longPage.keyboard.press('Backspace');
+  }
+  await longPage.keyboard.type(longest.word); await longPage.keyboard.press('Enter');
+  assert.match(await longPage.getByRole('status').first().textContent(), /Ben fatto/);
+  await longPage.getByRole('link', { name: 'Fonti del vocabolario' }).click();
+  await longPage.getByRole('link', { name: 'licenza completa di WordNet' }).click();
+  assert.match(await longPage.locator('body').textContent(), /WordNet 3.0 Copyright 2006/);
   assert.deepEqual(errors, []);
   console.log('PASS: daily persistence and win, category play and reset, loss, virtual/physical input, colors, 4 viewport sizes, help, midnight rollover, blocked storage; no browser errors.');
   console.log(`Screenshots: ${artifacts}`);

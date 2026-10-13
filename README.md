@@ -1,6 +1,6 @@
 # Wordwell
 
-Gioco di parole in inglese realizzato con React, Vite e Tailwind CSS. Layout responsive, indizi in inglese, 6 tentativi, tastiera fisica e virtuale, parole di lunghezza variabile e 20 voci B1/B2.
+Gioco di parole in inglese realizzato con React, Vite e Tailwind CSS. Layout responsive, indizi in inglese, 6 tentativi, tastiera fisica e virtuale, parole di lunghezza variabile e 4.511 voci A1–C1. Il vocabolario usa le liste Oxford come riferimento e definizioni WordNet riutilizzabili, con filtri per volgarità e significati arcaici o obsoleti. Fonti, criteri, licenza e rigenerazione sono documentati in [src/data/VOCABULARY.md](src/data/VOCABULARY.md).
 
 ## Avvio
 
@@ -91,7 +91,7 @@ In alternativa imposta `CHROME_PATH` al percorso di un Chrome già installato. `
 ## Modalità
 
 - **Parola del giorno**: hash FNV-1a della data locale `YYYY-MM-DD`, stesso dizionario e stessa data producono la stessa parola. Il gioco si aggiorna a mezzanotte locale anche se aperto; ricontrolla la data ogni minuto e al ritorno sulla pagina. Tentativi e testo parziale si salvano nel LocalStorage del browser.
-- **Modalità libera**: Food, Travel, Business e Technology. La categoria cambia subito la parola; “Nuova parola” avvia un'altra partita evitando la ripetizione immediata. Il progresso rimane mentre si passa da un tab all'altro, ma non al refresh.
+- **Modalità libera**: 15 categorie, tra cui Food, Travel, Business, Technology, Everyday Life, Health e Nature. La categoria cambia subito la parola; “Nuova parola” avvia un'altra partita evitando la ripetizione immediata. Il progresso rimane mentre si passa da un tab all'altro, ma non al refresh.
 - Sono accettate combinazioni A–Z della lunghezza corretta, senza verifica lessicale dei tentativi. Il dizionario contiene le soluzioni e le relative definizioni, non tutte le parole inglesi possibili.
 - Le lettere ripetute rispettano la quantità presente nella soluzione. Il colore migliore di una lettera rimane sulla tastiera.
 
